@@ -1,0 +1,42 @@
+# vLLM Docker Compose - Ubuntu 22.04
+# 사용법: docker compose up -d
+# 모델 변경: 환경변수 VLLM_MODEL 수정
+
+services:
+  vllm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vllm/vllm-ubuntu22:latest
+    container_name: vllm-server
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_TOKEN=${HF_TOKEN:-}
+      - HF_HOME=/root/.cache/huggingface
+      - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen2.5-0.5B-Instruct}
+    volumes:
+      - vllm-hf-cache:/root/.cache/huggingface
+      # 로컬 모델 마운트 (선택)
+      # - ./models:/models
+    ports:
+      - "8000:8000"
+    shm_size: "8gb"
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command:
+      - --model
+      - ${VLLM_MODEL:-Qwen/Qwen2.5-0.5B-Instruct}
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+
+volumes:
+  vllm-hf-cache:
